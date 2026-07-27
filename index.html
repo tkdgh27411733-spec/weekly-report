@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>오늘 뭐 먹지? - 메뉴 정하기</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Noto Sans KR -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Noto Sans KR', 'sans-serif'],
+                    },
+                    keyframes: {
+                        bounceLight: {
+                            '0%, 100%': { transform: 'translateY(-3%)' },
+                            '50%': { transform: 'translateY(0)' },
+                        },
+                        popIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.8)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' },
+                        }
+                    },
+                    animation: {
+                        'bounce-light': 'bounceLight 1.5s infinite',
+                        'pop-in': 'popIn 0.3s ease-out forwards',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Custom scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Glassmorphism effects */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between selection:bg-orange-500 selection:text-white pb-20 md:pb-8">
+
+    <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-2 cursor-pointer" onclick="switchTab('roulette')">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-md shadow-orange-500/20">
+                    <i class="fa-solid font-black fa-utensils text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg text-slate-900 leading-tight">오늘 뭐 먹지?</h1>
+                    <p class="text-xs text-slate-500 font-medium">결정장애 해결 메뉴 추천기</p>
+                </div>
+            </div>
+
+            <!-- Quick Favorites Counter Button -->
+            <button onclick="switchTab('favorites')" class="relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-orange-50 text-slate-700 text-xs font-semibold transition">
+                <i class="fa-solid fa-heart text-rose-500"></i>
+                <span id="favCount">0</span>
+            </button>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="max-w-4xl mx-auto px-4 flex gap-1 border-t border-slate-100 overflow-x-auto hide-scrollbar text-sm font-medium">
+            <button onclick="switchTab('roulette')" id="tab-roulette" class="nav-tab active flex items-center gap-2 px-4 py-3 border-b-2 border-orange-500 text-orange-600 font-bold whitespace-nowrap transition">
+                <i class="fa-solid fa-dice"></i> 랜덤 추천
+            </button>
+            <button onclick="switchTab('worldcup')" id="tab-worldcup" class="nav-tab flex items-center gap-2 px-4 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 whitespace-nowrap transition">
+                <i class="fa-solid fa-trophy text-amber-500"></i> 메뉴 이상형 월드컵
+            </button>
+            <button onclick="switchTab('filter')" id="tab-filter" class="nav-tab flex items-center gap-2 px-4 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 whitespace-nowrap transition">
+                <i class="fa-solid fa-sliders"></i> 맞춤 필터링
+            </button>
+            <button onclick="switchTab('browse')" id="tab-browse" class="nav-tab flex items-center gap-2 px-4 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 whitespace-nowrap transition">
+                <i class="fa-solid fa-grid-2 text-indigo-500"></i> 전체 메뉴 모아보기
+            </button>
+            <button onclick="switchTab('favorites')" id="tab-favorites" class="nav-tab flex items-center gap-2 px-4 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 whitespace-nowrap transition">
+                <i class="fa-solid fa-bookmark text-rose-500"></i> 즐겨찾기
+            </button>
+        </nav>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-4xl mx-auto w-full px-4 py-6 flex-1">
+
+        <!-- TAB 1: ROULETTE / RANDOM SELECTOR -->
+        <section id="view-roulette" class="space-y-6">
+            <div class="text-center space-y-2">
+                <span class="inline-block px-3 py-1 bg-orange-100 text-orange-700 text-xs font-bold rounded-full">스피드 결정</span>
+                <h2 class="text-2xl font-bold text-slate-800">버튼 한 번으로 점심·저녁 끝!</h2>
+                <p class="text-sm text-slate-500">원하는 카테고리를 선택하거나 전체 대상에서 랜덤으로 돌려보세요.</p>
+            </div>
+
+            <!-- Category Filter Selector for Roulette -->
+            <div class="flex flex-wrap justify-center gap-2 max-w-xl mx-auto">
+                <button onclick="setRouletteCategory('all')" class="cat-btn active border px-3.5 py-1.5 rounded-full text-xs font-semibold transition bg-orange-500 border-orange-500 text-white shadow-sm" data-cat="all">
+                    🍴 전체
+                </button>
+                <button onclick="setRouletteCategory('한식')" class="cat-btn border px-3.5 py-1.5 rounded-full text-xs font-semibold transition bg-white border-slate-200 text-slate-700 hover:bg-slate-50" data-cat="한식">
+                    🍚 한식
+                </button>
+                <button onclick="setRouletteCategory('양식')" class="cat-btn border px-3.5 py-1.5 rounded-full text-xs font-semibold transition bg-white border-slate-200 text-slate-700 hover:bg-slate-50" data-cat="양식">
+                    🍝 양식
+                </button>
+                <button onclick="setRouletteCategory('일식')" class="cat-btn border px-3.5 py-1.5 rounded-full text-xs font-semibold transition bg-white border-slate-200 text-slate-700 hover:bg-slate-50" data-cat="일식">
+                    🍣 일식
+                </button>
+                <button onclick="setRouletteCategory('중식')" class="cat-btn border px-3.5 py-1.5 rounded-full text-xs font-semibold transition bg-white border-slate-200 text-slate-700 hover:bg-slate-50" data-cat="중식">
+                    🥟 중식
+                </button>
+                <button onclick="setRouletteCategory('분식')" class="cat-btn border px-3.5 py-1.5 rounded-full text-xs font-semibold transition bg-white border-slate-200 text-slate-700 hover:bg-slate-50" data-cat="분식">
+                    🍤 떡볶이 분식
+                </button>
+                <button onclick="setRouletteCategory('아시안/기타')" class="cat-btn border px-3.5 py-1.5 rounded-full text-xs font-semibold transition bg-white border-slate-200 text-slate-700 hover:bg-slate-50" data-cat="아시안/기타">
+                    🌏 아시안/기타
+                </button>
+            </div>
+
+            <!-- Roulette Slot Display Card -->
+            <div class="max-w-md mx-auto bg-gradient-to-b from-white to-slate-50 rounded-3xl p-6 border border-slate-200 shadow-xl text-center space-y-6 relative overflow-hidden">
+                <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-orange-400 via-amber-400 to-rose-400"></div>
+                
+                <!-- Display Area -->
+                <div id="rouletteCard" class="min-h-[220px] flex flex-col items-center justify-center space-y-3 p-4 bg-white rounded-2xl border border-slate-100 shadow-inner transition-all duration-300">
+                    <div id="rouletteIcon" class="text-6xl animate-bounce-light">❓</div>
+                    <div id="rouletteName" class="text-2xl font-black text-slate-800">버튼을 눌러주세요</div>
+                    <div id="rouletteTags" class="flex flex-wrap justify-center gap-1.5">
+                        <span class="text-xs bg-slate-100 text-slate-500 px-2.5 py-0.5 rounded-full">#오늘뭐먹지</span>
+                    </div>
+                </div>
+
+                <!-- Control Buttons -->
+                <div class="space-y-3">
+                    <button id="spinBtn" onclick="spinRoulette()" class="w-full py-4 px-6 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-extrabold rounded-2xl shadow-lg shadow-orange-500/30 text-lg transition-transform active:scale-95 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-rotate text-xl"></i>
+                        <span>메뉴 추천 돌리기!</span>
+                    </button>
+
+                    <!-- Action buttons shown when selected -->
+                    <div id="rouletteActions" class="hidden flex gap-2 pt-1 animate-pop-in">
+                        <button onclick="searchNearby(currentRouletteFood.name)" class="flex-1 py-2.5 px-3 bg-emerald-50 text-emerald-700 font-bold text-xs rounded-xl hover:bg-emerald-100 border border-emerald-200 flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-location-dot"></i> 근처 맛집 찾기
+                        </button>
+                        <button onclick="toggleFavorite(currentRouletteFood.id)" id="rouletteFavBtn" class="py-2.5 px-4 bg-rose-50 text-rose-600 font-bold text-xs rounded-xl hover:bg-rose-100 border border-rose-200 flex items-center justify-center gap-1">
+                            <i class="fa-regular fa-heart text-sm"></i> 찜하기
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: MENU WORLD CUP -->
+        <section id="view-worldcup" class="hidden space-y-6">
+            <div class="text-center space-y-2">
+                <span class="inline-block px-3 py-1 bg-amber-100 text-amber-800 text-xs font-bold rounded-full">토너먼트</span>
+                <h2 class="text-2xl font-bold text-slate-800">메뉴 이상형 월드컵 (8강)</h2>
+                <p class="text-sm text-slate-500">두 가지 메뉴 중 더 끌리는 쪽을 둘 중 선택하여 최종 메뉴를 정해보세요!</p>
+            </div>
+
+            <!-- Start World Cup Button / Game Area -->
+            <div id="worldcupContainer" class="max-w-2xl mx-auto">
+                <div id="worldcupStartView" class="bg-white rounded-3xl p-8 border border-slate-200 shadow-lg text-center space-y-5">
+                    <div class="text-5xl">🏆</div>
+                    <h3 class="text-xl font-bold text-slate-800">오늘 끌리는 최강 메뉴 찾기</h3>
+                    <p class="text-sm text-slate-500 max-w-md mx-auto">8개의 인기 메뉴 중 토너먼트를 거쳐 오늘의 단 하나의 우승 메뉴를 선정해드립니다.</p>
+                    <button onclick="startWorldCup()" class="py-3.5 px-8 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-2xl shadow-md shadow-amber-500/20 text-base transition">
+                        이상형 월드컵 시작하기
+                    </button>
+                </div>
+
+                <!-- Match View -->
+                <div id="worldcupMatchView" class="hidden space-y-4">
+                    <div class="flex justify-between items-center bg-slate-100 px-4 py-2 rounded-xl text-xs font-bold text-slate-600">
+                        <span id="worldcupRoundText">8강전 (1/4)</span>
+                        <button onclick="resetWorldCup()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-arrow-rotate-left"></i> 처음부터</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Choice A -->
+                        <button onclick="selectWorldCupWinner(0)" class="group bg-white rounded-3xl p-6 border-2 border-slate-200 hover:border-orange-500 shadow-md hover:shadow-xl transition-all duration-200 flex flex-col items-center justify-center space-y-3 min-h-[200px]">
+                            <span id="wcImgA" class="text-6xl group-hover:scale-110 transition-transform">🍲</span>
+                            <span id="wcNameA" class="text-xl font-extrabold text-slate-800 group-hover:text-orange-600">메뉴 A</span>
+                            <span id="wcTagsA" class="text-xs text-slate-500">#태그</span>
+                        </button>
+
+                        <!-- Choice B -->
+                        <button onclick="selectWorldCupWinner(1)" class="group bg-white rounded-3xl p-6 border-2 border-slate-200 hover:border-orange-500 shadow-md hover:shadow-xl transition-all duration-200 flex flex-col items-center justify-center space-y-3 min-h-[200px]">
+                            <span id="wcImgB" class="text-6xl group-hover:scale-110 transition-transform">🍕</span>
+                            <span id="wcNameB" class="text-xl font-extrabold text-slate-800 group-hover:text-orange-600">메뉴 B</span>
+                            <span id="wcTagsB" class="text-xs text-slate-500">#태그</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Result View -->
+                <div id="worldcupWinnerView" class="hidden bg-gradient-to-b from-amber-50 to-white rounded-3xl p-8 border-2 border-amber-300 shadow-2xl text-center space-y-5 animate-pop-in">
+                    <div class="inline-block bg-amber-400 text-white font-black px-4 py-1 rounded-full text-xs">FINAL WINNER</div>
+                    <div id="winnerImg" class="text-7xl">🥇</div>
+                    <div>
+                        <p class="text-sm text-slate-500 font-medium">오늘 당신의 선택을 받은 우승 메뉴!</p>
+                        <h3 id="winnerName" class="text-3xl font-black text-slate-900 mt-1">우승 메뉴</h3>
+                    </div>
+                    <div id="winnerTags" class="flex flex-wrap justify-center gap-1.5"></div>
+
+                    <div class="flex flex-col sm:flex-row justify-center gap-3 pt-2">
+                        <button id="winnerSearchBtn" onclick="" class="py-3 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm shadow-md flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-map-location-dot"></i> 근처 맛집 바로 보기
+                        </button>
+                        <button onclick="startWorldCup()" class="py-3 px-6 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-xl text-sm">
+                            다시 하기
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: CRAVING FILTER -->
+        <section id="view-filter" class="hidden space-y-6">
+            <div class="text-center space-y-2">
+                <span class="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full">조건별 맞춤</span>
+                <h2 class="text-2xl font-bold text-slate-800">상황과 취향에 맞게 고르기</h2>
+                <p class="text-sm text-slate-500">원하는 조건들을 선택하시면 딱 맞는 식사 메뉴를 걸러서 보여드립니다.</p>
+            </div>
+
+            <!-- Filter Controls Panel -->
+            <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-5">
+                <!-- Filter Option 1: Soup -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">국물 여부</label>
+                    <div class="flex flex-wrap gap-2" id="filterSoup">
+                        <button onclick="toggleFilterTag('soup', 'all')" class="f-tag active text-xs font-semibold px-3 py-1.5 rounded-xl border border-indigo-500 bg-indigo-500 text-white" data-val="all">상관없음</button>
+                        <button onclick="toggleFilterTag('soup', 'soup')" class="f-tag text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50" data-val="soup">🍲 따뜻한 국물 요리</button>
+                        <button onclick="toggleFilterTag('soup', 'nosoup')" class="f-tag text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50" data-val="nosoup">🍱 국물 없는 요리/볶음/구이</button>
+                    </div>
+                </div>
+
+                <!-- Filter Option 2: Spicy -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">매운 정도</label>
+                    <div class="flex flex-wrap gap-2" id="filterSpicy">
+                        <button onclick="toggleFilterTag('spicy', 'all')" class="f-tag active text-xs font-semibold px-3 py-1.5 rounded-xl border border-indigo-500 bg-indigo-500 text-white" data-val="all">상관없음</button>
+                        <button onclick="toggleFilterTag('spicy', 'spicy')" class="f-tag text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50" data-val="spicy">🌶️ 매콤 칼칼한 음식</button>
+                        <button onclick="toggleFilterTag('spicy', 'mild')" class="f-tag text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50" data-val="mild">👶 담백/순한 맛</button>
+                    </div>
+                </div>
+
+                <!-- Filter Option 3: Main Ingredient -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">주재료 / 주식 형태</label>
+                    <div class="flex flex-wrap gap-2" id="filterType">
+                        <button onclick="toggleFilterTag('type', 'all')" class="f-tag active text-xs font-semibold px-3 py-1.5 rounded-xl border border-indigo-500 bg-indigo-500 text-white" data-val="all">전체</button>
+                        <button onclick="toggleFilterTag('type', 'rice')" class="f-tag text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50" data-val="rice">🍚 밥류 (덮밥/찌개/리조또)</button>
+                        <button onclick="toggleFilterTag('type', 'noodle')" class="f-tag text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50" data-val="noodle">🍜 면류 (라멘/파스타/국수)</button>
+                        <button onclick="toggleFilterTag('type', 'meat')" class="f-tag text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50" data-val="meat">🥩 고기류/헤비함</button>
+                        <button onclick="toggleFilterTag('type', 'light')" class="f-tag text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50" data-val="light">🥗 가볍게/간편식</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtered Results Grid -->
+            <div>
+                <div class="flex justify-between items-center mb-3">
+                    <span class="text-sm font-bold text-slate-700">검색 결과 <span id="filterResultCount" class="text-indigo-600">0</span>개</span>
+                    <button onclick="resetFilterSelections()" class="text-xs text-slate-400 hover:text-slate-600 underline">조건 초기화</button>
+                </div>
+                <div id="filterResultGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    <!-- Filter cards injected here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: BROWSE ALL MENUS -->
+        <section id="view-browse" class="hidden space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">전체 메뉴 모아보기</h2>
+                    <p class="text-xs text-slate-500">카테고리별로 대표적인 쉬운 식사 메뉴들입니다.</p>
+                </div>
+
+                <!-- Search Input -->
+                <div class="relative w-full md:w-64">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input type="text" id="searchInput" oninput="renderBrowseGrid()" placeholder="메뉴명 검색..." class="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50">
+                </div>
+            </div>
+
+            <!-- Category Tabs -->
+            <div class="flex gap-2 overflow-x-auto hide-scrollbar py-1">
+                <button onclick="filterBrowseCategory('all')" class="browse-cat active px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition bg-slate-900 text-white" data-cat="all">전체</button>
+                <button onclick="filterBrowseCategory('한식')" class="browse-cat px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition bg-white border border-slate-200 text-slate-700 hover:bg-slate-100" data-cat="한식">🍚 한식</button>
+                <button onclick="filterBrowseCategory('양식')" class="browse-cat px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition bg-white border border-slate-200 text-slate-700 hover:bg-slate-100" data-cat="양식">🍝 양식</button>
+                <button onclick="filterBrowseCategory('일식')" class="browse-cat px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition bg-white border border-slate-200 text-slate-700 hover:bg-slate-100" data-cat="일식">🍣 일식</button>
+                <button onclick="filterBrowseCategory('중식')" class="browse-cat px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition bg-white border border-slate-200 text-slate-700 hover:bg-slate-100" data-cat="중식">🥟 중식</button>
+                <button onclick="filterBrowseCategory('분식')" class="browse-cat px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition bg-white border border-slate-200 text-slate-700 hover:bg-slate-100" data-cat="분식">떡볶이 분식</button>
+                <button onclick="filterBrowseCategory('아시안/기타')" class="browse-cat px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition bg-white border border-slate-200 text-slate-700 hover:bg-slate-100" data-cat="아시안/기타">🌏 아시안/기타</button>
+            </div>
+
+            <!-- Grid output -->
+            <div id="browseGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <!-- Cards injected here -->
+            </div>
+        </section>
+
+        <!-- TAB 5: FAVORITES -->
+        <section id="view-favorites" class="hidden space-y-6">
+            <div class="text-center space-y-2">
+                <span class="inline-block px-3 py-1 bg-rose-100 text-rose-700 text-xs font-bold rounded-full">보관함</span>
+                <h2 class="text-2xl font-bold text-slate-800">내가 찜한 메뉴 목록</h2>
+                <p class="text-sm text-slate-500">자주 먹는 메뉴들을 저장하고 빠르게 결정해보세요.</p>
+            </div>
+
+            <div id="favGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <!-- Favorite items injected here -->
+            </div>
+
+            <div id="favEmptyView" class="hidden text-center py-12 space-y-3 bg-white rounded-3xl border border-slate-200">
+                <div class="text-4xl text-slate-300"><i class="fa-regular fa-heart"></i></div>
+                <p class="text-sm font-semibold text-slate-500">아직 즐겨찾기에 추가한 메뉴가 없습니다.</p>
+                <button onclick="switchTab('browse')" class="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800">
+                    메뉴둘러보고 찜하기
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Food Detail / Map Search Modal -->
+    <div id="foodModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 space-y-5 animate-pop-in relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-sm">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="text-center space-y-3">
+                <div id="modalIcon" class="text-6xl">🍛</div>
+                <div>
+                    <span id="modalCat" class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-700">한식</span>
+                    <h3 id="modalName" class="text-2xl font-black text-slate-800 mt-1">제육볶음</h3>
+                </div>
+                <p id="modalDesc" class="text-xs text-slate-500 leading-relaxed">달콤매콤한 양념에 볶아낸 대한민국 대표 점심 인기 메뉴!</p>
+                <div id="modalTags" class="flex flex-wrap justify-center gap-1"></div>
+            </div>
+
+            <!-- External Search Links -->
+            <div class="space-y-2 pt-2">
+                <p class="text-xs text-center font-bold text-slate-400 uppercase tracking-wider">주변 맛집 검색</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="modalNaverBtn" class="py-2.5 px-3 bg-[#03C75A] hover:bg-[#02b350] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-magnifying-glass"></i> 네이버 지도
+                    </button>
+                    <button id="modalKakaoBtn" class="py-2.5 px-3 bg-[#FEE500] hover:bg-[#f2d900] text-slate-900 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-map-pin"></i> 카카오 맵
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Bottom Fixed Navigation (Shown on small screens) -->
+    <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-200 z-40 px-3 py-2 flex justify-around">
+        <button onclick="switchTab('roulette')" class="mobile-nav-item flex flex-col items-center gap-0.5 text-xs text-orange-600 font-bold">
+            <i class="fa-solid fa-dice text-base"></i>
+            <span>랜덤</span>
+        </button>
+        <button onclick="switchTab('worldcup')" class="mobile-nav-item flex flex-col items-center gap-0.5 text-xs text-slate-400 hover:text-slate-700">
+            <i class="fa-solid fa-trophy text-base"></i>
+            <span>월드컵</span>
+        </button>
+        <button onclick="switchTab('filter')" class="mobile-nav-item flex flex-col items-center gap-0.5 text-xs text-slate-400 hover:text-slate-700">
+            <i class="fa-solid fa-sliders text-base"></i>
+            <span>필터</span>
+        </button>
+        <button onclick="switchTab('browse')" class="mobile-nav-item flex flex-col items-center gap-0.5 text-xs text-slate-400 hover:text-slate-700">
+            <i class="fa-solid fa-utensils text-base"></i>
+            <span>전체</span>
+        </button>
+    </div>
+
+    <script>
+        // MASTER FOOD DATASET (Popular and accessible Korean food options)
+        const foods = [
+            // 한식
+            { id: 1, name: '김치찌개', category: '한식', icon: '🍲', desc: '칼칼하고 시원한 한국인의 얼굴 메뉴! 돼지고기/참치 케미', tags: ['국물', '매운맛', '밥류'], soup: 'soup', spicy: 'spicy', type: 'rice' },
+            { id: 2, name: '된장찌개', category: '한식', icon: '🥘', desc: '구수하고 깊은 맛! 차돌박이나 애호박 넣어 한 그릇', tags: ['국물', '순한맛', '밥류'], soup: 'soup', spicy: 'mild', type: 'rice' },
+            { id: 3, name: '제육볶음', category: '한식', icon: '🥩', desc: '매콤달콤 양념 돼지고기 볶음! 쌈 채소와 최고의 조합', tags: ['국물없음', '매운맛', '고기류'], soup: 'nosoup', spicy: 'spicy', type: 'meat' },
+            { id: 4, name: '비빔밥', category: '한식', icon: '🥗', desc: '다양한 나물과 계란후라이, 고추장 쓱쓱 비벼 건강한 한 끼', tags: ['국물없음', '순한맛', '밥류'], soup: 'nosoup', spicy: 'mild', type: 'rice' },
+            { id: 5, name: '삼겹살/목살', category: '한식', icon: '🥓', desc: '노릇하게 구운 돼지고기와 파절이, 상추쌈!', tags: ['국물없음', '고기류', '헤비함'], soup: 'nosoup', spicy: 'mild', type: 'meat' },
+            { id: 6, name: '돼지국밥/순대국밥', category: '한식', icon: '🍲', desc: '진한 뽀얀 육수에 든든한 밥 한 공기 말아 먹기', tags: ['국물', '든든함', '밥류'], soup: 'soup', spicy: 'mild', type: 'rice' },
+            { id: 7, name: '부대찌개', category: '한식', icon: '🥘', desc: '햄, 소시지, 라면사리 듬뿍 들어간 찌개', tags: ['국물', '매운맛', '밥류'], soup: 'soup', spicy: 'spicy', type: 'rice' },
+            { id: 8, name: '순두부찌개', category: '한식', icon: '🫕', desc: '몽글몽글 순두부와 계란 톡! 해물이나 고기 가득', tags: ['국물', '매운맛', '밥류'], soup: 'soup', spicy: 'spicy', type: 'rice' },
+            { id: 9, name: '갈비탕/설렁탕', category: '한식', icon: '🥣', desc: '깔끔하고 뜨끈한 고기 육수 국물에 깍두기 올려', tags: ['국물', '순한맛', '밥류'], soup: 'soup', spicy: 'mild', type: 'rice' },
+            { id: 10, name: '닭갈비', category: '한식', icon: '🍗', desc: '매콤한 닭고기, 떡, 고구마와 함께 볶아 먹는 재미', tags: ['국물없음', '매운맛', '고기류'], soup: 'nosoup', spicy: 'spicy', type: 'meat' },
+
+            // 일식
+            { id: 11, name: '돈까스', category: '일식', icon: '🥩', desc: '바삭바삭한 튀김옷과 두툼한 고기! 등심/안심/치즈', tags: ['국물없음', '튀김', '고기류'], soup: 'nosoup', spicy: 'mild', type: 'meat' },
+            { id: 12, name: '초밥 (스시)', category: '일식', icon: '🍣', desc: '신선한 생선 회와 간이 된 밥의 깔끔한 조합', tags: ['국물없음', '가벼움', '밥류'], soup: 'nosoup', spicy: 'mild', type: 'light' },
+            { id: 13, name: '일본식 라멘', category: '일식', icon: '🍜', desc: '진한 돈코츠/미소 국물과 탱글한 면발, 차슈', tags: ['국물', '면류'], soup: 'soup', spicy: 'mild', type: 'noodle' },
+            { id: 14, name: '가츠동/규동', category: '일식', icon: '🍲', desc: '달콤 짭조름한 간장 소스에 돈까스나 소고기를 올린 덮밥', tags: ['국물없음', '밥류', '간편식'], soup: 'nosoup', spicy: 'mild', type: 'rice' },
+            { id: 15, name: '우동/소바', category: '일식', icon: '🥢', desc: '뜨끈한 국물 우동이나 시원한 메밀 소바', tags: ['국물', '면류', '가벼움'], soup: 'soup', spicy: 'mild', type: 'noodle' },
+            { id: 16, name: '카레라이스', category: '일식', icon: '🍛', desc: '진하게 끓인 카레와 감자, 당근, 아비코 스타일 토핑', tags: ['국물없음', '밥류'], soup: 'nosoup', spicy: 'mild', type: 'rice' },
+
+            // 양식
+            { id: 17, name: '파스타', category: '양식', icon: '🍝', desc: '토마토, 크림, 알리오 올리오 파스타!', tags: ['국물없음', '면류'], soup: 'nosoup', spicy: 'mild', type: 'noodle' },
+            { id: 18, name: '피자', category: '양식', icon: '🍕', desc: '고소한 치즈와 풍성한 토핑이 가득한 피자 한 판', tags: ['국물없음', '패스트푸드'], soup: 'nosoup', spicy: 'mild', type: 'meat' },
+            { id: 19, name: '수제버거', category: '양식', icon: '🍔', desc: '육즙 가득 패티와 두툼한 야채, 감자튀김 세트', tags: ['국물없음', '패스트푸드', '가벼움'], soup: 'nosoup', spicy: 'mild', type: 'light' },
+            { id: 20, name: '스테이크', category: '양식', icon: '🥩', desc: '특별한 날 즐기는 노릇하게 구운 안심/등심 스테이크', tags: ['국물없음', '고기류', '헤비함'], soup: 'nosoup', spicy: 'mild', type: 'meat' },
+            { id: 21, name: '리조또', category: '양식', icon: '🍲', desc: '부드러운 크림이나 토마토 소스 베이스의 쌀 요리', tags: ['국물없음', '밥류'], soup: 'nosoup', spicy: 'mild', type: 'rice' },
+            { id: 22, name: '샐러드/포케', category: '양식', icon: '🥗', desc: '신선한 야채와 연어, 닭가슴살! 건강하고 가벼운 한 끼', tags: ['국물없음', '가벼움', '건강식'], soup: 'nosoup', spicy: 'mild', type: 'light' },
+
+            // 중식
+            { id: 23, name: '짜장면', category: '중식', icon: '🍜', desc: '달콤 짭조름한 춘장 소스에 비벼 먹는 중화면', tags: ['국물없음', '면류', '가성비'], soup: 'nosoup', spicy: 'mild', type: 'noodle' },
+            { id: 24, name: '짬뽕', category: '중식', icon: '🍲', desc: '해물 가득! 불향 나는 얼큰하고 매콤한 국물', tags: ['국물', '매운맛', '면류'], soup: 'soup', spicy: 'spicy', type: 'noodle' },
+            { id: 25, name: '탕수육', category: '중식', icon: '🥩', desc: '바삭하게 튀긴 바삭 돼지고기와 새콤달콤 소스 (부먹/찍먹)', tags: ['국물없음', '튀김'], soup: 'nosoup', spicy: 'mild', type: 'meat' },
+            { id: 26, name: '마라탕/마라샹궈', category: '중식', icon: '🌶️', desc: '얼얼하고 매운 마라 향신료와 원하는 재료 가득!', tags: ['국물', '매운맛'], soup: 'soup', spicy: 'spicy', type: 'noodle' },
+            { id: 27, name: '중화 볶음밥', category: '중식', icon: '🍳', desc: '고슬고슬하게 볶아낸 밥에 짜장 소스와 짬뽕 국물 세트', tags: ['국물없음', '밥류'], soup: 'nosoup', spicy: 'mild', type: 'rice' },
+
+            // 분식
+            { id: 28, name: '떡볶이', category: '분식', icon: '🍢', desc: '매콤달콤 떡볶이 소스에 순대, 튀김 찍어 먹기', tags: ['국물없음', '매운맛', '분식'], soup: 'nosoup', spicy: 'spicy', type: 'light' },
+            { id: 29, name: '김밥 & 라면', category: '분식', icon: '🍙', desc: '분식집 최고의 자승자박 콤보! 고소한 김밥과 얼큰 라면', tags: ['국물', '분식', '가성비'], soup: 'soup', spicy: 'spicy', type: 'noodle' },
+            { id: 30, name: '치킨', category: '분식', icon: '🍗', desc: '후라이드 vs 양념! 대한민국 국민 야식 및 식사', tags: ['국물없음', '고기류'], soup: 'nosoup', spicy: 'mild', type: 'meat' },
+
+            // 아시안/기타
+            { id: 31, name: '베트남 쌀국수 (포)', category: '아시안/기타', icon: '🍜', desc: '시원하고 진한 소고기 육수에 숙주 가득 쌀국수', tags: ['국물', '면류', '가벼움'], soup: 'soup', spicy: 'mild', type: 'noodle' },
+            { id: 32, name: '팟타이', category: '아시안/기타', icon: '🥢', desc: '새우와 계란, 숙주를 고소한 팟타이 소스에 볶은 면', tags: ['국물없음', '면류'], soup: 'nosoup', spicy: 'mild', type: 'noodle' },
+            { id: 33, name: '인도 커리 & 난', category: '아시안/기타', icon: '🫓', desc: '부드럽고 풍부한 향신료 커리와 화덕에 구운 난', tags: ['국물없음', '이색요리'], soup: 'nosoup', spicy: 'mild', type: 'rice' },
+            { id: 34, name: '타코 / 퀘사디아', category: '아시안/기타', icon: '🌮', desc: '멕시칸 살사 소스와 고기, 또띠아의 상큼한 만남', tags: ['국물없음', '가벼움'], soup: 'nosoup', spicy: 'mild', type: 'light' }
+        ];
+
+        // State Variables
+        let currentRouletteCategory = 'all';
+        let currentRouletteFood = null;
+        let isSpinning = false;
+        let favorites = JSON.parse(localStorage.getItem('my_favorite_foods') || '[]');
+
+        // Filters State
+        let activeFilters = {
+            soup: 'all',
+            spicy: 'all',
+            type: 'all'
+        };
+
+        let currentBrowseCat = 'all';
+
+        // Worldcup state
+        let wcRound = [];
+        let wcNextRound = [];
+        let wcCurrentPairIndex = 0;
+
+        // Initialize on Load
+        window.onload = function() {
+            updateFavBadge();
+            renderBrowseGrid();
+            applyCravingFilters();
+        };
+
+        // Navigation Switcher
+        function switchTab(tabId) {
+            const tabs = ['roulette', 'worldcup', 'filter', 'browse', 'favorites'];
+            tabs.forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).classList.remove('border-orange-500', 'text-orange-600', 'font-bold');
+                document.getElementById(`tab-${t}`).classList.add('border-transparent', 'text-slate-500');
+            });
+
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            const activeNav = document.getElementById(`tab-${tabId}`);
+            if (activeNav) {
+                activeNav.classList.remove('border-transparent', 'text-slate-500');
+                activeNav.classList.add('border-orange-500', 'text-orange-600', 'font-bold');
+            }
+
+            if (tabId === 'favorites') {
+                renderFavorites();
+            }
+        }
+
+        // --- ROULETTE LOGIC ---
+        function setRouletteCategory(cat) {
+            currentRouletteCategory = cat;
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                if (btn.getAttribute('data-cat') === cat) {
+                    btn.className = "cat-btn active border px-3.5 py-1.5 rounded-full text-xs font-semibold transition bg-orange-500 border-orange-500 text-white shadow-sm";
+                } else {
+                    btn.className = "cat-btn border px-3.5 py-1.5 rounded-full text-xs font-semibold transition bg-white border-slate-200 text-slate-700 hover:bg-slate-50";
+                }
+            });
+        }
+
+        function spinRoulette() {
+            if (isSpinning) return;
+            isSpinning = true;
+
+            const filteredList = currentRouletteCategory === 'all' 
+                ? foods 
+                : foods.filter(f => f.category === currentRouletteCategory);
+
+            if (filteredList.length === 0) {
+                isSpinning = false;
+                return;
+            }
+
+            const spinBtn = document.getElementById('spinBtn');
+            spinBtn.disabled = true;
+            spinBtn.classList.add('opacity-75');
+
+            document.getElementById('rouletteActions').classList.add('hidden');
+
+            let counter = 0;
+            const totalDuration = 2000; 
+            const intervalTime = 80;
+
+            const timer = setInterval(() => {
+                const randomSample = filteredList[Math.floor(Math.random() * filteredList.length)];
+                document.getElementById('rouletteIcon').innerText = randomSample.icon;
+                document.getElementById('rouletteName').innerText = randomSample.name;
+                document.getElementById('rouletteTags').innerHTML = randomSample.tags.map(t => `<span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full">#${t}</span>`).join('');
+
+                counter += intervalTime;
+                if (counter >= totalDuration) {
+                    clearInterval(timer);
+                    // Final Pick
+                    currentRouletteFood = filteredList[Math.floor(Math.random() * filteredList.length)];
+                    document.getElementById('rouletteIcon').innerText = currentRouletteFood.icon;
+                    document.getElementById('rouletteName').innerText = currentRouletteFood.name;
+                    document.getElementById('rouletteTags').innerHTML = currentRouletteFood.tags.map(t => `<span class="text-xs bg-orange-100 text-orange-700 px-2.5 py-0.5 rounded-full font-semibold">#${t}</span>`).join('');
+
+                    document.getElementById('rouletteActions').classList.remove('hidden');
+                    updateRouletteFavBtn();
+
+                    isSpinning = false;
+                    spinBtn.disabled = false;
+                    spinBtn.classList.remove('opacity-75');
+                }
+            }, intervalTime);
+        }
+
+        function updateRouletteFavBtn() {
+            if (!currentRouletteFood) return;
+            const btn = document.getElementById('rouletteFavBtn');
+            const isFav = favorites.includes(currentRouletteFood.id);
+            if (isFav) {
+                btn.innerHTML = `<i class="fa-solid fa-heart text-rose-500"></i> 찜취소`;
+            } else {
+                btn.innerHTML = `<i class="fa-regular fa-heart text-slate-500"></i> 찜하기`;
+            }
+        }
+
+        // --- WORLDCUP TOURNAMENT LOGIC ---
+        function startWorldCup() {
+            // Pick 8 random foods
+            const shuffled = [...foods].sort(() => 0.5 - Math.random());
+            wcRound = shuffled.slice(0, 8);
+            wcNextRound = [];
+            wcCurrentPairIndex = 0;
+
+            document.getElementById('worldcupStartView').classList.add('hidden');
+            document.getElementById('worldcupWinnerView').classList.add('hidden');
+            document.getElementById('worldcupMatchView').classList.remove('hidden');
+
+            renderWorldCupMatch();
+        }
+
+        function resetWorldCup() {
+            document.getElementById('worldcupMatchView').classList.add('hidden');
+            document.getElementById('worldcupWinnerView').classList.add('hidden');
+            document.getElementById('worldcupStartView').classList.remove('hidden');
+        }
+
+        function renderWorldCupMatch() {
+            const totalPairs = wcRound.length / 2;
+            const currentMatchNum = wcCurrentPairIndex + 1;
+            
+            let stageName = wcRound.length === 8 ? '8강전' : (wcRound.length === 4 ? '준결승 (4강)' : '결승전 (FINAL)');
+            document.getElementById('worldcupRoundText').innerText = `${stageName} (${currentMatchNum}/${totalPairs})`;
+
+            const foodA = wcRound[wcCurrentPairIndex * 2];
+            const foodB = wcRound[wcCurrentPairIndex * 2 + 1];
+
+            document.getElementById('wcImgA').innerText = foodA.icon;
+            document.getElementById('wcNameA').innerText = foodA.name;
+            document.getElementById('wcTagsA').innerText = foodA.tags.map(t => `#${t}`).join(' ');
+
+            document.getElementById('wcImgB').innerText = foodB.icon;
+            document.getElementById('wcNameB').innerText = foodB.name;
+            document.getElementById('wcTagsB').innerText = foodB.tags.map(t => `#${t}`).join(' ');
+        }
+
+        function selectWorldCupWinner(winnerOffset) {
+            const winner = wcRound[wcCurrentPairIndex * 2 + winnerOffset];
+            wcNextRound.push(winner);
+
+            wcCurrentPairIndex++;
+            if (wcCurrentPairIndex * 2 >= wcRound.length) {
+                // Round Finished
+                if (wcNextRound.length === 1) {
+                    // Final winner
+                    showWorldCupWinner(wcNextRound[0]);
+                } else {
+                    wcRound = [...wcNextRound];
+                    wcNextRound = [];
+                    wcCurrentPairIndex = 0;
+                    renderWorldCupMatch();
+                }
+            } else {
+                renderWorldCupMatch();
+            }
+        }
+
+        function showWorldCupWinner(winner) {
+            document.getElementById('worldcupMatchView').classList.add('hidden');
+            document.getElementById('worldcupWinnerView').classList.remove('hidden');
+
+            document.getElementById('winnerImg').innerText = winner.icon;
+            document.getElementById('winnerName').innerText = winner.name;
+            document.getElementById('winnerTags').innerHTML = winner.tags.map(t => `<span class="text-xs bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full font-bold">#${t}</span>`).join('');
+            
+            document.getElementById('winnerSearchBtn').onclick = () => searchNearby(winner.name);
+        }
+
+        // --- CRAVING FILTER LOGIC ---
+        function toggleFilterTag(category, value) {
+            activeFilters[category] = value;
+
+            const container = document.getElementById(`filter${category.charAt(0).toUpperCase() + category.slice(1)}`);
+            container.querySelectorAll('.f-tag').forEach(btn => {
+                if (btn.getAttribute('data-val') === value) {
+                    btn.className = "f-tag active text-xs font-semibold px-3 py-1.5 rounded-xl border border-indigo-500 bg-indigo-500 text-white";
+                } else {
+                    btn.className = "f-tag text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50";
+                }
+            });
+
+            applyCravingFilters();
+        }
+
+        function resetFilterSelections() {
+            activeFilters = { soup: 'all', spicy: 'all', type: 'all' };
+            ['Soup', 'Spicy', 'Type'].forEach(cat => {
+                const container = document.getElementById(`filter${cat}`);
+                container.querySelectorAll('.f-tag').forEach(btn => {
+                    if (btn.getAttribute('data-val') === 'all') {
+                        btn.className = "f-tag active text-xs font-semibold px-3 py-1.5 rounded-xl border border-indigo-500 bg-indigo-500 text-white";
+                    } else {
+                        btn.className = "f-tag text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50";
+                    }
+                });
+            });
+            applyCravingFilters();
+        }
+
+        function applyCravingFilters() {
+            let list = foods.filter(item => {
+                if (activeFilters.soup !== 'all' && item.soup !== activeFilters.soup) return false;
+                if (activeFilters.spicy !== 'all' && item.spicy !== activeFilters.spicy) return false;
+                if (activeFilters.type !== 'all' && item.type !== activeFilters.type) return false;
+                return true;
+            });
+
+            document.getElementById('filterResultCount').innerText = list.length;
+            const grid = document.getElementById('filterResultGrid');
+
+            if (list.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-8 text-xs text-slate-400">조건에 일치하는 메뉴가 없습니다. 필터를 완화해보세요!</div>`;
+                return;
+            }
+
+            grid.innerHTML = list.map(item => createFoodCardHTML(item)).join('');
+        }
+
+        // --- BROWSE GRID LOGIC ---
+        function filterBrowseCategory(cat) {
+            currentBrowseCat = cat;
+            document.querySelectorAll('.browse-cat').forEach(btn => {
+                if (btn.getAttribute('data-cat') === cat) {
+                    btn.className = "browse-cat active px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition bg-slate-900 text-white";
+                } else {
+                    btn.className = "browse-cat px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition bg-white border border-slate-200 text-slate-700 hover:bg-slate-100";
+                }
+            });
+            renderBrowseGrid();
+        }
+
+        function renderBrowseGrid() {
+            const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+            let list = foods.filter(item => {
+                const matchCat = currentBrowseCat === 'all' || item.category === currentBrowseCat;
+                const matchName = item.name.toLowerCase().includes(keyword) || item.tags.some(t => t.includes(keyword));
+                return matchCat && matchName;
+            });
+
+            const grid = document.getElementById('browseGrid');
+            if (list.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400 text-sm">검색 결과가 없습니다.</div>`;
+                return;
+            }
+
+            grid.innerHTML = list.map(item => createFoodCardHTML(item)).join('');
+        }
+
+        // --- FAVORITES LOGIC ---
+        function toggleFavorite(id) {
+            const index = favorites.indexOf(id);
+            if (index > -1) {
+                favorites.splice(index, 1);
+            } else {
+                favorites.push(id);
+            }
+            localStorage.setItem('my_favorite_foods', JSON.stringify(favorites));
+
+            updateFavBadge();
+            updateRouletteFavBtn();
+            renderBrowseGrid();
+            applyCravingFilters();
+            renderFavorites();
+        }
+
+        function updateFavBadge() {
+            document.getElementById('favCount').innerText = favorites.length;
+        }
+
+        function renderFavorites() {
+            const favGrid = document.getElementById('favGrid');
+            const favEmpty = document.getElementById('favEmptyView');
+
+            const favList = foods.filter(f => favorites.includes(f.id));
+
+            if (favList.length === 0) {
+                favGrid.innerHTML = '';
+                favEmpty.classList.remove('hidden');
+            } else {
+                favEmpty.classList.add('hidden');
+                favGrid.innerHTML = favList.map(item => createFoodCardHTML(item)).join('');
+            }
+        }
+
+        // Card Helper Component
+        function createFoodCardHTML(food) {
+            const isFav = favorites.includes(food.id);
+            return `
+                <div class="bg-white rounded-2xl p-4 border border-slate-200/80 hover:border-orange-400 shadow-sm hover:shadow-md transition group relative flex flex-col justify-between">
+                    <button onclick="toggleFavorite(${food.id})" class="absolute top-3 right-3 w-7 h-7 rounded-full bg-slate-50 hover:bg-rose-50 flex items-center justify-center text-xs transition">
+                        <i class="${isFav ? 'fa-solid fa-heart text-rose-500' : 'fa-regular fa-heart text-slate-400'}"></i>
+                    </button>
+                    
+                    <div onclick="openModal(${food.id})" class="cursor-pointer space-y-2">
+                        <div class="text-4xl text-center py-2 group-hover:scale-110 transition-transform">${food.icon}</div>
+                        <div>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-500">${food.category}</span>
+                            <h4 class="font-bold text-slate-800 text-base mt-1 group-hover:text-orange-600 transition">${food.name}</h4>
+                        </div>
+                        <p class="text-xs text-slate-400 line-clamp-1">${food.desc}</p>
+                    </div>
+
+                    <div class="pt-3 mt-2 border-t border-slate-100 flex justify-between items-center text-xs">
+                        <span class="text-slate-400">#${food.tags[0] || '음식'}</span>
+                        <button onclick="searchNearby('${food.name}')" class="text-emerald-600 hover:text-emerald-700 font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-location-dot text-[10px]"></i> 맛집
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- MODAL & EXTERNAL MAP SEARCH ---
+        function openModal(id) {
+            const food = foods.find(f => f.id === id);
+            if (!food) return;
+
+            document.getElementById('modalIcon').innerText = food.icon;
+            document.getElementById('modalCat').innerText = food.category;
+            document.getElementById('modalName').innerText = food.name;
+            document.getElementById('modalDesc').innerText = food.desc;
+            document.getElementById('modalTags').innerHTML = food.tags.map(t => `<span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">#${t}</span>`).join('');
+
+            document.getElementById('modalNaverBtn').onclick = () => {
+                window.open(`https://map.naver.com/v5/search/${encodeURIComponent(food.name)}`, '_blank');
+            };
+
+            document.getElementById('modalKakaoBtn').onclick = () => {
+                window.open(`https://map.kakao.com/?q=${encodeURIComponent(food.name)}`, '_blank');
+            };
+
+            document.getElementById('foodModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('foodModal').classList.add('hidden');
+        }
+
+        function searchNearby(foodName) {
+            // Direct map search shortcut (Default to Naver Map)
+            window.open(`https://map.naver.com/v5/search/${encodeURIComponent(foodName)}`, '_blank');
+        }
+    </script>
+</body>
+</html>
