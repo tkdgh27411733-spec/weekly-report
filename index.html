@@ -95,11 +95,22 @@
                 </div>
             </div>
 
-            <!-- Quick Favorites Counter Button -->
-            <button onclick="switchTab('favorites')" class="relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-orange-50 text-slate-700 text-xs font-semibold transition">
-                <i class="fa-solid fa-heart text-rose-500"></i>
-                <span id="favCount">0</span>
-            </button>
+            <!-- Header Right Buttons -->
+            <div class="flex items-center gap-2">
+                <!-- Smart Factory Facility Link Button -->
+                <a href="https://tkdgh27411733-spec.github.io/weekly-report/SmartFactoryFacility.html" target="_blank" rel="noopener noreferrer" onclick="window.open('https://tkdgh27411733-spec.github.io/weekly-report/SmartFactoryFacility.html', '_blank'); return false;" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition border border-indigo-200">
+                    <i class="fa-solid fa-industry text-indigo-500"></i>
+                    <span class="hidden sm:inline">스마트팩토리 설비</span>
+                    <span class="sm:hidden">설비보기</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-indigo-400"></i>
+                </a>
+
+                <!-- Quick Favorites Counter Button -->
+                <button onclick="switchTab('favorites')" class="relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-orange-50 text-slate-700 text-xs font-semibold transition">
+                    <i class="fa-solid fa-heart text-rose-500"></i>
+                    <span id="favCount">0</span>
+                </button>
+            </div>
         </div>
 
         <!-- Navigation Tabs -->
@@ -119,6 +130,9 @@
             <button onclick="switchTab('favorites')" id="tab-favorites" class="nav-tab flex items-center gap-2 px-4 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 whitespace-nowrap transition">
                 <i class="fa-solid fa-bookmark text-rose-500"></i> 즐겨찾기
             </button>
+            <a href="https://tkdgh27411733-spec.github.io/weekly-report/SmartFactoryFacility.html" target="_blank" rel="noopener noreferrer" onclick="window.open('https://tkdgh27411733-spec.github.io/weekly-report/SmartFactoryFacility.html', '_blank'); return false;" class="nav-tab flex items-center gap-2 px-4 py-3 border-b-2 border-transparent text-indigo-600 hover:text-indigo-800 font-bold whitespace-nowrap transition bg-indigo-50/60 hover:bg-indigo-100/60 rounded-t-xl ml-auto">
+                <i class="fa-solid fa-industry text-indigo-500"></i> 스마트팩토리 설비 ↗
+            </a>
         </nav>
     </header>
 
@@ -416,6 +430,10 @@
             <i class="fa-solid fa-utensils text-base"></i>
             <span>전체</span>
         </button>
+        <a href="https://tkdgh27411733-spec.github.io/weekly-report/SmartFactoryFacility.html" target="_blank" rel="noopener noreferrer" onclick="window.open('https://tkdgh27411733-spec.github.io/weekly-report/SmartFactoryFacility.html', '_blank'); return false;" class="mobile-nav-item flex flex-col items-center gap-0.5 text-xs text-indigo-600 font-bold">
+            <i class="fa-solid fa-industry text-base"></i>
+            <span>설비보기</span>
+        </a>
     </div>
 
     <script>
